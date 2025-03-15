@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { CouponContext } from "../context/CouponContext";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Admin = () => {
   const [coupons, setCoupons] = useState([]);
@@ -13,9 +14,12 @@ const Admin = () => {
 
   const fetchCoupons = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/coupons", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/coupons`,
+        {
+          withCredentials: true,
+        }
+      );
       setCoupons(res.data);
     } catch (err) {
       console.error(err);
@@ -30,12 +34,13 @@ const Admin = () => {
     if (!newCoupon.trim()) return;
     try {
       await axios.post(
-        "http://localhost:5000/api/coupons/add",
+        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/add`,
         { code: newCoupon.toUpperCase() },
         { withCredentials: true }
       );
       setNewCoupon("");
       fetchCoupons();
+      toast.success("Coupon added successfully!");
     } catch (err) {
       console.error(err);
     }
@@ -44,7 +49,7 @@ const Admin = () => {
   const toggleCouponStatus = async (id) => {
     try {
       await axios.post(
-        `http://localhost:5000/api/coupons/toggle/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/toggle/${id}`,
         {},
         { withCredentials: true }
       );
@@ -59,10 +64,14 @@ const Admin = () => {
 
   const deleteCoupon = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/coupons/delete/${id}`, {
-        withCredentials: true,
-      });
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/delete/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
       fetchCoupons();
+      toast.success("Coupon deleted successfully!");
     } catch (err) {
       console.error(err);
     }
@@ -76,12 +85,13 @@ const Admin = () => {
     if (!updatedCode.trim()) return;
     try {
       await axios.post(
-        `http://localhost:5000/api/coupons/update/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/update/${id}`,
         { code: updatedCode.toUpperCase() },
         { withCredentials: true }
       );
       setEditingCoupon(null);
       fetchCoupons();
+      toast.success("Coupon updated successfully!");
     } catch (err) {
       console.error(err);
     }
@@ -132,7 +142,10 @@ const Admin = () => {
         </thead>
         <tbody>
           {coupons.map((coupon) => (
-            <tr key={coupon._id} className="border-b border-gray-600">
+            <tr
+              key={coupon._id}
+              className="border-b border-gray-600 text-center"
+            >
               <td className="p-3">
                 {editingCoupon === coupon._id ? (
                   <input
@@ -152,7 +165,7 @@ const Admin = () => {
                     : "Active"
                   : "Disabled"}
               </td>
-              <td className="p-3 flex space-x-2">
+              <td className="p-3 flex space-x-2 text-center">
                 {!coupon.claimed && (
                   <button
                     onClick={() => toggleCouponStatus(coupon._id)}

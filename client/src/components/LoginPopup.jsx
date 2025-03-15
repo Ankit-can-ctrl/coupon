@@ -16,7 +16,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/admin/login",
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/login`,
         { username, password },
         { withCredentials: true } // ✅ Important: Allow cookies to be stored
       );

@@ -13,7 +13,7 @@ const Home = () => {
   useEffect(() => {
     // Fetch an unclaimed coupon for the user
     axios
-      .get("http://localhost:5000/api/coupons/assign", {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/coupons/assign`, {
         headers: { "X-Forwarded-For": "192.168.1.101" }, // Simulating different IPs
       })
       .then((res) => setCoupon(res.data.coupon))
@@ -25,7 +25,7 @@ const Home = () => {
       const browserSession = localStorage.getItem("browserSession");
 
       const res = await axios.post(
-        "http://localhost:5000/api/coupons/claim",
+        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/claim`,
         { browserSession },
         {
           withCredentials: true, // Important for cookie handling
@@ -79,7 +79,7 @@ const Home = () => {
       <div>
         <h1 className="text-3xl font-bold mb-6">Claim Your Coupon</h1>
         {coupon ? (
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center flex flex-col gap-4">
             <p className="text-xl">Your Coupon Code:</p>
             <p className="text-2xl font-bold bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg">
               {coupon.code}

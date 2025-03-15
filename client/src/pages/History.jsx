@@ -8,9 +8,12 @@ const History = () => {
   // Fetch claim history from backend
   const fetchHistory = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/claims", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/claims`,
+        {
+          withCredentials: true,
+        }
+      );
       setHistory(res.data);
     } catch (err) {
       console.error("Error fetching history", err);
@@ -35,8 +38,18 @@ const History = () => {
           </tr>
         </thead>
         <tbody>
+          {history.length === 0 && (
+            <tr>
+              <td colSpan="4" className="p-3 text-center">
+                No claims found.
+              </td>
+            </tr>
+          )}
           {history.map((claim) => (
-            <tr key={claim._id} className="border-b border-gray-600">
+            <tr
+              key={claim._id}
+              className="border-b text-center border-gray-600"
+            >
               <td className="p-3">{claim.couponId?.code || "N/A"}</td>
               <td className="p-3">{claim.ip}</td>
               <td className="p-3">{claim.browserSession}</td>

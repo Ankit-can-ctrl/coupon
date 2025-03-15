@@ -9,7 +9,7 @@ export const CouponProvider = ({ children }) => {
   const logout = async () => {
     try {
       await axios.post(
-        "http://localhost:5000/api/admin/logout",
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/logout`,
         {},
         { withCredentials: true }
       );
@@ -20,8 +20,6 @@ export const CouponProvider = ({ children }) => {
       console.error("Logout failed:", error);
     }
   };
-
-  console.log(token);
 
   return (
     <CouponContext.Provider value={{ token, setToken, logout }}>

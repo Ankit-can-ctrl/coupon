@@ -2,6 +2,7 @@ import { useContext, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { CouponContext } from "../context/CouponContext";
+import { toast } from "react-toastify";
 
 const LoginPopup = ({ isOpen, onClose }) => {
   const { setToken } = useContext(CouponContext);
@@ -25,6 +26,7 @@ const LoginPopup = ({ isOpen, onClose }) => {
       navigate("/admin");
     } catch (err) {
       setError("Invalid credentials");
+      toast.error(err.response.data.message);
       setLoading(false);
     }
   };

@@ -7,6 +7,13 @@ export const assignCoupon = async (req, res) => {
     const ip =
       req.headers["x-forwarded-for"] || req.ip || req.connection.remoteAddress;
 
+    const alreadyClaimed = await Claim.findOne({ ip });
+    if (alreadyClaimed) {
+      return res
+        .status(403)
+        .json({ message: "You have already claimed this coupon." });
+    }
+
     // Check if user already has a coupon assigned
     const existingClaim = await Coupon.findOne({ assignedIp: ip });
 
@@ -31,49 +38,107 @@ export const assignCoupon = async (req, res) => {
   }
 };
 
+const COOLDOWN_HOURS = 24; // Define cooldown period
+
 export const claimCoupon = async (req, res) => {
   try {
-    const ip =
-      req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-    const { browserSession } = req.body;
+    let ip =
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.connection?.remoteAddress ||
+      req.ip;
 
-    // Check if user already claimed a coupon
-    const existingClaim = await Claim.findOne({
-      $or: [{ ip }, { browserSession }],
-    });
-
-    if (existingClaim) {
-      return res
-        .status(403)
-        .json({ message: "You have already claimed this coupon." });
+    if (ip === "::1") {
+      ip = "127.0.0.1";
     }
 
-    // Find next available coupon (round-robin)
+    let { browserSession } = req.body;
+
+    // If session cookie is not provided in the request body, check for it in cookies
+    if (!browserSession && req.cookies.sessionId) {
+      browserSession = req.cookies.sessionId;
+    }
+
+    // Check if this IP has already claimed a coupon within the cooldown period
+    const lastClaim = await Claim.findOne({ ip }).sort({ claimedAt: -1 });
+
+    if (lastClaim) {
+      const timeSinceLastClaim =
+        (Date.now() - new Date(lastClaim.claimedAt).getTime()) /
+        (1000 * 60 * 60); // Convert to hours
+
+      if (timeSinceLastClaim < COOLDOWN_HOURS) {
+        const hoursRemaining = Math.ceil(COOLDOWN_HOURS - timeSinceLastClaim);
+        return res.status(403).json({
+          message: `Please wait ${hoursRemaining} hours before claiming another coupon.`,
+        });
+      }
+    }
+
+    // Check if the user has claimed a coupon in this session
+    if (browserSession) {
+      const sessionClaim = await Claim.findOne({ browserSession });
+      if (sessionClaim) {
+        return res.status(403).json({
+          message: "You have already claimed a coupon in this session.",
+        });
+      }
+    }
+
+    // Find next available coupon using round-robin
     const coupon = await Coupon.findOneAndUpdate(
-      { claimed: false }, // Find an unclaimed coupon
-      { $inc: { usedCount: 1 }, $set: { claimed: true } }, // Increment `usedCount` and mark as claimed
-      { sort: { usedCount: 1, createdAt: 1 }, new: true } // Prioritize least-used coupons
+      {
+        claimed: false,
+        isActive: true,
+      },
+      {
+        $set: { claimed: true },
+        $inc: { usedCount: 1 },
+      },
+      {
+        sort: { usedCount: 1, createdAt: 1 },
+        new: true,
+      }
     );
 
     if (!coupon) {
       return res.status(404).json({
-        message:
-          "No coupons available or coupon have been claimed. Please check back later.",
+        message: "No coupons available at the moment. Please try again later.",
       });
     }
 
-    // Store claim record
-    await Claim.create({
+    // Generate session ID if not provided
+    const sessionId = browserSession || `session-${Date.now()}`;
+
+    // Create claim record
+    const newClaim = await Claim.create({
       ip,
-      browserSession,
+      browserSession: sessionId,
       couponId: coupon._id,
       code: coupon.code,
+      claimedAt: new Date(),
     });
 
-    res.json({ message: "Coupon claimed successfully!", coupon: coupon.code });
+    // Set session cookie if not already set
+    if (!browserSession) {
+      res.cookie("sessionId", sessionId, {
+        httpOnly: true,
+        maxAge: COOLDOWN_HOURS * 60 * 60 * 1000, // Convert hours to milliseconds
+        sameSite: "strict",
+      });
+    }
+
+    return res.json({
+      message: "Coupon claimed successfully!",
+      coupon: {
+        code: coupon.code,
+        expiresIn: `${COOLDOWN_HOURS} hours`,
+      },
+    });
   } catch (error) {
     console.error("Error claiming coupon:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      message: "An error occurred while claiming the coupon. Please try again.",
+    });
   }
 };
 

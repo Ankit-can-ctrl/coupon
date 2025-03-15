@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import LoginPopup from "../components/LoginPopup";
 import { CouponContext } from "../context/CouponContext";
+import { toast } from "react-toastify";
 
 const Home = () => {
   const [coupon, setCoupon] = useState(null);
@@ -21,16 +22,32 @@ const Home = () => {
 
   const claimCoupon = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/api/coupons/claim", {
-        browserSession:
-          localStorage.getItem("browserSession") || "session-" + Date.now(),
-        couponId: coupon._id,
-      });
+      const browserSession = localStorage.getItem("browserSession");
+
+      const res = await axios.post(
+        "http://localhost:5000/api/coupons/claim",
+        { browserSession },
+        {
+          withCredentials: true, // Important for cookie handling
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       setClaimed(true);
-      alert(res.data.message);
+      setCoupon(res.data.coupon);
+      toast.success(res.data.message);
+
+      // Store the session ID if it's a new session
+      if (!browserSession) {
+        localStorage.setItem("browserSession", res.data.sessionId);
+      }
     } catch (err) {
-      alert(err.response.data.message);
+      const errorMessage =
+        err.response?.data?.message || "Failed to claim coupon";
+      toast.error(errorMessage);
+      console.error("Error claiming coupon:", err);
     }
   };
 

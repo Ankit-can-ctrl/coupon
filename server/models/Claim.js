@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 
 const ClaimSchema = new mongoose.Schema({
+  code: { type: String, required: true },
   couponId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Coupon",

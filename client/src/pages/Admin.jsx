@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { CouponContext } from "../context/CouponContext";
+import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
   const [coupons, setCoupons] = useState([]);
@@ -8,6 +9,7 @@ const Admin = () => {
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [updatedCode, setUpdatedCode] = useState("");
   const { logout } = useContext(CouponContext);
+  const navigate = useNavigate();
 
   const fetchCoupons = async () => {
     try {
@@ -66,6 +68,10 @@ const Admin = () => {
     }
   };
 
+  const handleHistoryClick = () => {
+    navigate("/history");
+  };
+
   const updateCoupon = async (id) => {
     if (!updatedCode.trim()) return;
     try {
@@ -85,9 +91,17 @@ const Admin = () => {
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">Admin Dashboard - Coupons</h1>
-        <button className="bg-blue-300 px-3 py-2 rounded-lg" onClick={logout}>
-          Logout
-        </button>
+        <div className="flex gap-5 items-center justify-center">
+          <button
+            onClick={handleHistoryClick}
+            className="bg-blue-300 px-3 py-2 rounded-lg"
+          >
+            Claim History
+          </button>
+          <button className="bg-blue-300 px-3 py-2 rounded-lg" onClick={logout}>
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Add New Coupon */}

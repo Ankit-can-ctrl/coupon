@@ -63,7 +63,12 @@ export const claimCoupon = async (req, res) => {
     }
 
     // Store claim record
-    await Claim.create({ ip, browserSession, couponId: coupon._id });
+    await Claim.create({
+      ip,
+      browserSession,
+      couponId: coupon._id,
+      code: coupon.code,
+    });
 
     res.json({ message: "Coupon claimed successfully!", coupon: coupon.code });
   } catch (error) {

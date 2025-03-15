@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: "https://coupon-kf2o.vercel.app",
+    origin: process.env.CLIENT_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -29,5 +29,6 @@ mongoose
 
 app.use("/api/coupons", couponRoutes);
 app.use("/api/admin", adminRoutes);
+console.log("Allowed Frontend URL:", process.env.CLIENT_URL);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

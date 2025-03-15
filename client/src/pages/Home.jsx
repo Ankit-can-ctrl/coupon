@@ -1,40 +1,91 @@
-import { useContext, useEffect, useState } from "react";
+import { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import LoginPopup from "../components/LoginPopup";
 import { CouponContext } from "../context/CouponContext";
 
-function Home() {
-  const { coupons, fetchCoupons, claimCoupon } = useContext(CouponContext);
-  const [message, setMessage] = useState("");
+const Home = () => {
+  const [coupon, setCoupon] = useState(null);
+  const [claimed, setClaimed] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const { token, logout } = useContext(CouponContext);
 
   useEffect(() => {
-    fetchCoupons();
+    // Fetch an unclaimed coupon for the user
+    axios
+      .get("http://localhost:5000/api/coupons/assign", {
+        headers: { "X-Forwarded-For": "192.168.1.101" }, // Simulating different IPs
+      })
+      .then((res) => setCoupon(res.data.coupon))
+      .catch((err) => console.error(err));
   }, []);
 
-  const handleClaim = async (couponId) => {
-    const response = await claimCoupon(couponId);
-    setMessage(response.message);
+  const claimCoupon = async () => {
+    try {
+      const res = await axios.post("http://localhost:5000/api/coupons/claim", {
+        browserSession:
+          localStorage.getItem("browserSession") || "session-" + Date.now(),
+        couponId: coupon._id,
+      });
+
+      setClaimed(true);
+      alert(res.data.message);
+    } catch (err) {
+      alert(err.response.data.message);
+    }
+  };
+
+  const handleLoginClick = () => {
+    setIsLoginOpen(true);
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Available Coupons</h1>
-      {message && (
-        <div className="bg-green-500 text-white p-2 mb-4">{message}</div>
-      )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {coupons.map((coupon) => (
-          <div key={coupon._id} className="border p-4 rounded shadow">
-            <h2 className="text-lg font-semibold">{coupon.code}</h2>
-            <button
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={() => handleClaim(coupon._id)}
-            >
-              Claim
-            </button>
+    <div className="flex flex-col items-center gap-20 min-h-screen bg-gray-900 text-white">
+      <div className="w-full flex gap-5 justify-end p-4">
+        {token ? (
+          <button onClick={logout} className="bg-blue-300 px-3 py-2 rounded-lg">
+            Logout
+          </button>
+        ) : (
+          <button
+            onClick={handleLoginClick}
+            className="bg-blue-300 px-3 py-2 rounded-lg"
+          >
+            Login
+          </button>
+        )}
+
+        <LoginPopup
+          isOpen={isLoginOpen}
+          onClose={() => setIsLoginOpen(false)}
+        />
+      </div>
+      <div>
+        <h1 className="text-3xl font-bold mb-6">Claim Your Coupon</h1>
+        {coupon ? (
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <p className="text-xl">Your Coupon Code:</p>
+            <p className="text-2xl font-bold bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg">
+              {coupon.code}
+            </p>
+            {!claimed ? (
+              <button
+                onClick={claimCoupon}
+                className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Claim Now
+              </button>
+            ) : (
+              <p className="mt-4 text-green-400">
+                Coupon claimed successfully!
+              </p>
+            )}
           </div>
-        ))}
+        ) : (
+          <p>Loading available coupons...</p>
+        )}
       </div>
     </div>
   );
-}
+};
 
 export default Home;

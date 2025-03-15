@@ -35,6 +35,10 @@ export const adminLogin = async (req, res) => {
     .json({ message: "Login successful", token });
 };
 
+export const logoutUser = (req, res) => {
+  res.clearCookie("token").json({ message: "Logout successful" });
+};
+
 export const getClaimHistory = async (req, res) => {
   const claims = await Claim.find().populate("couponId");
   res.json(claims);

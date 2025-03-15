@@ -1,35 +1,30 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState } from "react";
 import axios from "axios";
 
 export const CouponContext = createContext();
 
 export const CouponProvider = ({ children }) => {
-  const [coupons, setCoupons] = useState([]);
+  const [token, setToken] = useState(null);
 
-  const fetchCoupons = async () => {
+  const logout = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/coupons");
-      setCoupons(response.data);
+      await axios.post(
+        "http://localhost:5000/api/admin/logout",
+        {},
+        { withCredentials: true }
+      );
+
+      setToken(null); // ✅ Update state to reflect logout
+      window.location.href = "/"; // ✅ Redirect to home page
     } catch (error) {
-      console.error("Error fetching coupons", error);
+      console.error("Logout failed:", error);
     }
   };
 
-  const claimCoupon = async (couponId) => {
-    try {
-      const response = await axios.post("http://localhost:5000/api/claim", {
-        couponId,
-      });
-      fetchCoupons();
-      return response.data;
-    } catch (error) {
-      console.error("Error claiming coupon", error);
-      return { message: "Error claiming coupon" };
-    }
-  };
+  console.log(token);
 
   return (
-    <CouponContext.Provider value={{ coupons, fetchCoupons, claimCoupon }}>
+    <CouponContext.Provider value={{ token, setToken, logout }}>
       {children}
     </CouponContext.Provider>
   );

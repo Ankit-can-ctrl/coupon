@@ -5,12 +5,14 @@ import { CouponContext } from "../context/CouponContext";
 const Admin = () => {
   const [coupons, setCoupons] = useState([]);
   const [newCoupon, setNewCoupon] = useState("");
+  const [editingCoupon, setEditingCoupon] = useState(null);
+  const [updatedCode, setUpdatedCode] = useState("");
   const { logout } = useContext(CouponContext);
 
   const fetchCoupons = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/coupons", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        withCredentials: true,
       });
       setCoupons(res.data);
     } catch (err) {
@@ -27,10 +29,8 @@ const Admin = () => {
     try {
       await axios.post(
         "http://localhost:5000/api/coupons/add",
-        { code: newCoupon },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
+        { code: newCoupon.toUpperCase() },
+        { withCredentials: true }
       );
       setNewCoupon("");
       fetchCoupons();
@@ -39,10 +39,26 @@ const Admin = () => {
     }
   };
 
-  const updateCoupon = async (id, update) => {
+  const toggleCouponStatus = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/coupons/${id}`, update, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      await axios.post(
+        `http://localhost:5000/api/coupons/toggle/${id}`,
+        {},
+        { withCredentials: true }
+      );
+      fetchCoupons();
+    } catch (error) {
+      console.error(
+        "Error toggling coupon status:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  const deleteCoupon = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/coupons/delete/${id}`, {
+        withCredentials: true,
       });
       fetchCoupons();
     } catch (err) {
@@ -50,11 +66,15 @@ const Admin = () => {
     }
   };
 
-  const deleteCoupon = async (id) => {
+  const updateCoupon = async (id) => {
+    if (!updatedCode.trim()) return;
     try {
-      await axios.delete(`http://localhost:5000/api/coupons/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      await axios.post(
+        `http://localhost:5000/api/coupons/update/${id}`,
+        { code: updatedCode.toUpperCase() },
+        { withCredentials: true }
+      );
+      setEditingCoupon(null);
       fetchCoupons();
     } catch (err) {
       console.error(err);
@@ -64,7 +84,7 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold mb-4">Admin Dashboard - Coupons</h1>
+        <h1 className="text-3xl font-bold">Admin Dashboard - Coupons</h1>
         <button className="bg-blue-300 px-3 py-2 rounded-lg" onClick={logout}>
           Logout
         </button>
@@ -99,21 +119,52 @@ const Admin = () => {
         <tbody>
           {coupons.map((coupon) => (
             <tr key={coupon._id} className="border-b border-gray-600">
-              <td className="p-3">{coupon.code}</td>
               <td className="p-3">
-                {coupon.expired
-                  ? "Expired"
-                  : coupon.claimed
-                  ? "Claimed"
-                  : "Active"}
+                {editingCoupon === coupon._id ? (
+                  <input
+                    type="text"
+                    className="p-2 text-black rounded"
+                    value={updatedCode}
+                    onChange={(e) => setUpdatedCode(e.target.value)}
+                  />
+                ) : (
+                  coupon.code
+                )}
+              </td>
+              <td className="p-3">
+                {coupon.isActive
+                  ? coupon.claimed
+                    ? "Claimed"
+                    : "Active"
+                  : "Disabled"}
               </td>
               <td className="p-3 flex space-x-2">
                 {!coupon.claimed && (
                   <button
-                    onClick={() => updateCoupon(coupon._id, { expired: true })}
+                    onClick={() => toggleCouponStatus(coupon._id)}
+                    className={`px-3 py-1 rounded ${
+                      coupon.isActive ? "bg-red-500" : "bg-green-500"
+                    }`}
+                  >
+                    {coupon.isActive ? "Disable" : "Enable"}
+                  </button>
+                )}
+                {editingCoupon === coupon._id ? (
+                  <button
+                    onClick={() => updateCoupon(coupon._id)}
+                    className="bg-blue-500 px-3 py-1 rounded"
+                  >
+                    Save
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingCoupon(coupon._id);
+                      setUpdatedCode(coupon.code);
+                    }}
                     className="bg-yellow-500 px-3 py-1 rounded"
                   >
-                    Expire
+                    Update
                   </button>
                 )}
                 <button

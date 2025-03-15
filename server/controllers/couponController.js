@@ -16,7 +16,7 @@ export const assignCoupon = async (req, res) => {
 
     // Assign next available coupon (round-robin)
     const coupon = await Coupon.findOneAndUpdate(
-      { claimed: false, assignedIp: null }, // Find an unclaimed coupon
+      { claimed: false, assignedIp: null, isActive: true }, // Find an unclaimed coupon
       { $set: { assignedIp: ip }, $inc: { usedCount: 1 } }, // Assign to IP, increment usage count
       { sort: { usedCount: 1, createdAt: 1 }, new: true }
     );
@@ -94,10 +94,47 @@ export const toggleCouponAvailability = async (req, res) => {
     const { id } = req.params;
     const coupon = await Coupon.findById(id);
     if (!coupon) return res.status(404).json({ message: "Coupon not found" });
-    coupon.available = !coupon.available;
+    coupon.isActive = !coupon.isActive;
     await coupon.save();
     res.json({ message: "Coupon availability toggled successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error updating coupon status" });
+  }
+};
+
+export const updateCouponCode = async (req, res) => {
+  try {
+    const { id } = req.params; // Extract coupon ID from request params
+    let { code } = req.body; // Get new coupon code from request body
+
+    if (!code || typeof code !== "string")
+      return res.status(400).json({ message: "Invalid coupon code" });
+
+    code = code.toUpperCase(); // Convert to uppercase before updating
+
+    const coupon = await Coupon.findById(id);
+    if (!coupon) return res.status(404).json({ message: "Coupon not found" });
+
+    coupon.code = code; // Update the coupon code
+    await coupon.save(); // Save the updated coupon
+
+    res.json({ message: "Coupon updated successfully", coupon });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating coupon code", error });
+  }
+};
+
+export const deleteCoupon = async (req, res) => {
+  try {
+    const { id } = req.params; // Extract coupon ID from request params
+
+    const coupon = await Coupon.findById(id);
+    if (!coupon) return res.status(404).json({ message: "Coupon not found" });
+
+    await Coupon.findByIdAndDelete(id); // Delete the coupon from the database
+
+    res.json({ message: "Coupon deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting coupon", error });
   }
 };

@@ -6,6 +6,8 @@ import {
   addCoupon,
   toggleCouponAvailability,
   assignCoupon,
+  updateCouponCode,
+  deleteCoupon,
 } from "../controllers/couponController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -15,6 +17,8 @@ router.get("/", getCoupons);
 router.get("/assign", assignCoupon);
 router.post("/claim", claimCoupon);
 router.post("/add", authMiddleware, addCoupon);
-router.put("/toggle/:id", authMiddleware, toggleCouponAvailability);
+router.post("/toggle/:id", authMiddleware, toggleCouponAvailability);
+router.post("/update/:id", authMiddleware, updateCouponCode);
+router.delete("/delete/:id", authMiddleware, deleteCoupon);
 
 export default router;

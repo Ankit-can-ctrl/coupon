@@ -1,0 +1,58 @@
+# Coupon Distribution System
+
+A full-stack application for distributing unique coupon codes using a round-robin algorithm.
+
+## Quick Setup
+
+### Backend Setup
+```bash
+cd server
+npm install
+# Create .env file with:
+MONGO_URL=your_mongodb_url
+JWT_SECRET=your_secret
+CLIENT_URL=frontend_url
+# Run development server
+npm run dev
+```
+
+### Frontend Setup
+```bash
+cd client
+npm install
+# Create .env file with:
+VITE_BACKEND_URL=backend_url
+# Run development server
+npm run dev
+```
+
+## Implementation Overview
+
+### Core Features
+- Round-robin coupon distribution
+- IP-based claiming restrictions
+- Session-based tracking
+- 24-hour cooldown period
+- Admin panel for coupon management
+
+### Key Components
+
+1. **Coupon Assignment (`/api/coupons/assign`)**
+   - Assigns unclaimed coupons based on IP
+   - Uses round-robin to ensure fair distribution
+
+2. **Coupon Claiming (`/api/coupons/claim`)**
+   - Validates IP and session
+   - Enforces 24-hour cooldown
+   - Tracks claims in database
+
+3. **Admin Management**
+   - CRUD operations for coupons
+   - Toggle coupon availability
+   - View claim history
+
+### Security Measures
+- IP tracking
+- Session management
+- CORS protection
+- JWT authentication for admin
